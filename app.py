@@ -9,7 +9,7 @@ st.set_page_config(page_title="台灣健保醫事機構互動地圖", layout="wi
 # 加載資料
 @st.cache_data
 def load_data():
-    data = pd.read_csv('C:\\Users\\User\\Documents\\GitHub\\clinic11312\\健保特約醫事機構診所.csv')
+    data = pd.read_csv('健保特約醫事機構診所.csv')
     data.columns = data.columns.str.strip()  # 去除多餘空格
     data["縣市"] = data["地址"].str.extract(r'([\u4e00-\u9fa5]{2,3}[市縣])')[0].fillna("未知")
     data["緯度"] = pd.to_numeric(data["緯度"], errors="coerce")
