@@ -59,8 +59,8 @@ st.components.v1.html(
 )
 
 # 用戶經緯度輸入處理
-latitude = st.experimental_get_query_params().get('latitude', [None])[0]
-longitude = st.experimental_get_query_params().get('longitude', [None])[0]
+latitude = st.query_params.get('latitude', [None])[0]
+longitude = st.query_params.get('longitude', [None])[0]
 
 if latitude and longitude:
     user_location = (float(latitude), float(longitude))
