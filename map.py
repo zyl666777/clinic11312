@@ -41,6 +41,6 @@ for index, row in data.iterrows():
         time.sleep(0.1)  # 控制請求速率，避免超過 API 限制
 
 # 保存處理後的資料
-output_file_path = "C:\\Users\\User\\Documents\\GitHub\\clinic11312\\健保特約醫事機構診所.csv"  # 使用原始字符串
+output_file_path = "C:\\Users\\User\\Documents\\GitHub\\clinic11312\\健保特約醫事機構診所-.csv"  # 使用原始字符串
 data.to_csv(output_file_path, index=False, encoding='utf-8-sig')  # 使用 UTF-8 編碼保存文件，適合中文
 print(f"地理編碼完成，結果已保存至: {output_file_path}")
