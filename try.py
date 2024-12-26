@@ -21,65 +21,20 @@ data = load_data()
 
 # 設定標題與介紹
 st.title("台灣健保醫事機構互動地圖")
-st.write("透過此系統，您可以查詢台灣各地的健保特約醫事機構分佈，並根據需求篩選或查看詳細資訊。")
+st.write("透過此系統，您可以查詢台灣各地的健保特約醫事機構分佈，並自動顯示最近診所的位置。")
 
-# 篩選功能
-city_options = ["全部"] + list(data["縣市"].unique())
-selected_city = st.selectbox("選擇縣市", city_options)
-
-type_options = ["全部"] + data["醫事機構種類"].dropna().unique().tolist()
-selected_type = st.selectbox("選擇醫事機構種類", type_options)
-
-# 根據篩選條件過濾資料
-filtered_data = data.copy()
-if selected_city != "全部":
-    filtered_data = filtered_data[filtered_data["縣市"] == selected_city]
-
-if selected_type != "全部":
-    filtered_data = filtered_data[filtered_data["醫事機構種類"] == selected_type]
-
-# 地圖顯示
-st.subheader("互動地圖")
-m = folium.Map(location=[23.6978, 120.9605], zoom_start=8)
-
-# 將醫事機構數據添加到地圖
-for _, row in filtered_data.iterrows():
-    if pd.notna(row["緯度"]) and pd.notna(row["經度"]):  # 確保經緯度非空
-        folium.Marker(
-            location=[row["緯度"], row["經度"]],
-            popup=f"""
-            <strong>醫事機構名稱:</strong> {row['醫事機構名稱']}<br>
-            <strong>種類:</strong> {row['醫事機構種類']}<br>
-            <strong>電話:</strong> {row['電話']}<br>
-            <strong>地址:</strong> {row['地址']}<br>
-            <strong>診療科別:</strong> {row['診療科別']}<br>
-            <strong>服務項目:</strong> {row['服務項目']}
-            """,
-            icon=folium.Icon(color="blue" if row["醫事機構種類"] == "診所" else "green")
-        ).add_to(m)
-
-# 顯示地圖
-folium_static(m)
-
-# 顯示醫事機構清單
-st.subheader("醫事機構清單")
-st.dataframe(filtered_data)
-
-# 用戶位置和最近診所
-st.subheader("查找最近的健保特約診所")
-st.write("請允許瀏覽器訪問您的位置信息以顯示最近診所。")
-
-# HTML 元件獲取用戶位置
+# 添加獲取用戶位置的 JavaScript 腳本
 location_script = """
 <script>
 navigator.geolocation.getCurrentPosition(
     (position) => {
-        const coords = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-        };
-        document.getElementById("latitude").value = coords.latitude;
-        document.getElementById("longitude").value = coords.longitude;
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        const inputLat = document.getElementById("latitude");
+        const inputLon = document.getElementById("longitude");
+        inputLat.value = latitude;
+        inputLon.value = longitude;
+        document.getElementById("location-form").submit();
     },
     (error) => {
         console.error(error);
@@ -89,26 +44,26 @@ navigator.geolocation.getCurrentPosition(
 </script>
 """
 
-st.components.v1.html(f"""
+# 自動執行地理位置腳本
+st.components.v1.html(
+    f"""
     <div>
-        <button onclick="navigator.geolocation.getCurrentPosition(position => {{
-            document.getElementById('latitude').value = position.coords.latitude;
-            document.getElementById('longitude').value = position.coords.longitude;
-        }})">獲取位置</button>
-        <form>
-            <input type="text" id="latitude" name="latitude" placeholder="緯度" />
-            <input type="text" id="longitude" name="longitude" placeholder="經度" />
+        <form id="location-form">
+            <input type="hidden" id="latitude" name="latitude" />
+            <input type="hidden" id="longitude" name="longitude" />
         </form>
+        {location_script}
     </div>
-    {location_script}
-""", height=200)
+    """,
+    height=0,
+)
 
-# 用戶輸入經緯度
-user_lat = st.text_input("緯度", "")
-user_lon = st.text_input("經度", "")
+# 用戶經緯度輸入處理
+latitude = st.experimental_get_query_params().get('latitude', [None])[0]
+longitude = st.experimental_get_query_params().get('longitude', [None])[0]
 
-if user_lat and user_lon:
-    user_location = (float(user_lat), float(user_lon))
+if latitude and longitude:
+    user_location = (float(latitude), float(longitude))
     
     # 計算每個診所到用戶的距離
     def calculate_distance(row):
@@ -128,3 +83,9 @@ if user_lat and user_lon:
                   popup=nearest_clinic['醫事機構名稱'], icon=folium.Icon(color="blue")).add_to(m_nearest)
 
     folium_static(m_nearest)
+else:
+    st.write("正在嘗試獲取您的位置...")
+
+# 顯示醫事機構清單
+st.subheader("醫事機構清單")
+st.dataframe(data)
